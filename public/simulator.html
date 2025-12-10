@@ -522,7 +522,7 @@
     
     try {
       
-      const response = await fetch('http://localhost:4000/update-context', {
+      const response = await fetch('/update-context', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -684,4 +684,5 @@
   updateUI();
 </script>
 </body>
+
 </html>
