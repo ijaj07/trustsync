@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TrustSync • Device Context Studio</title>
+  <style>
+    :root {
+      --bg-grad-1: #050816;
+      --bg-grad-2: #111827;
+      --accent: #4f46e5;
+      --accent-soft: #6366f1;
+      --accent-teal: #0d9488;
+      --accent-orange: #f97316;
+      --soft-border: rgba(148, 163, 184, 0.4);
+      --text-main: #e5e7eb;
+      --text-soft: #9ca3af;
+    }
+
+    * { box-sizing: border-box; transition: all 0.2s ease-in-out; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 0 0, #1d4ed8 0, transparent 55%),
+        radial-gradient(circle at 100% 100%, #22c55e 0, transparent 55%),
+        linear-gradient(135deg, var(--bg-grad-1), var(--bg-grad-2));
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      position: sticky; top: 0; z-index: 20; padding: 12px 28px;
+      background: linear-gradient(90deg, rgba(15,23,42,0.92), rgba(15,23,42,0.80));
+      backdrop-filter: blur(18px); border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; }
+   .brand-logo {
+  
+  flex-shrink: 0; 
+
+  width: 33px; 
+  height: 33px; 
+  border-radius: 6px; 
+  
+  
+  background: #ffffff; 
+  
+ 
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
+  
+  
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  
+  
+  overflow: hidden; 
+}
+
+
+.brand-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; 
+}
+    .brand-text { display: flex; flex-direction: column; }
+    .brand-text span:first-child { font-size: 17px; font-weight: 700; letter-spacing: 0.03em; }
+    .brand-text span:last-child { font-size: 11px; color: var(--text-soft); }
+
+    .pill-header {
+      padding: 6px 11px; border-radius: 999px;
+      background: radial-gradient(circle at 0 0, rgba(56,189,248,0.35), rgba(79,70,229,0.6));
+      border: 1px solid rgba(191, 219, 254, 0.5); font-size: 11px;
+      display: inline-flex; align-items: center; gap: 6px; color: #e5f3ff;
+      box-shadow: 0 0 0 1px rgba(15,23,42,0.6);
+    }
+    .pill-dot { width: 7px; height: 7px; border-radius: 999px; background: #22c55e; box-shadow: 0 0 0 4px rgba(34,197,94,0.25); }
+    .pill-dot.pulse { animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+    main { flex: 1; padding: 18px 24px 24px; max-width: 1220px; margin: 0 auto; width: 100%; }
+
+    .layout {
+      display: grid; grid-template-columns: minmax(0, 3.2fr) minmax(0, 2.3fr);
+      gap: 20px; align-items: stretch;
+    }
+    @media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+    .section-title {
+      font-size: 13px; text-transform: uppercase; letter-spacing: 0.18em;
+      color: var(--text-soft); margin-bottom: 8px;
+    }
+
+    .phone-shell {
+      position: relative; width: 100%; max-width: 380px; margin: 0 auto;
+      aspect-ratio: 9/19; border-radius: 36px; padding: 14px;
+      background: radial-gradient(circle at 0 0,#4f46e5,#111827);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.75), 0 0 0 1px rgba(148,163,184,0.5);
+    }
+    .phone-inner {
+      width: 100%; height: 100%; border-radius: 28px; padding: 12px;
+      background: linear-gradient(145deg, rgba(15,23,42,0.95), rgba(15,23,42,0.85));
+      border: 1px solid rgba(148,163,184,0.5); display: flex; flex-direction: column;
+      position: relative; overflow: hidden;
+    }
+    
+    /* Scanning Animation Effect */
+    .scan-line {
+      position: absolute; top: -100px; left: 0; right: 0; height: 40px;
+      background: linear-gradient(to bottom, transparent, rgba(99, 102, 241, 0.2), transparent);
+      z-index: 10; pointer-events: none; opacity: 0;
+    }
+    .phone-inner.scanning .scan-line {
+      animation: scanDown 0.6s ease-out forwards; opacity: 1;
+    }
+    @keyframes scanDown { 0% { top: -20%; opacity: 0; } 50% { opacity: 1; } 100% { top: 120%; opacity: 0; } }
+
+    .phone-notch {
+      align-self: center; width: 110px; height: 18px; border-radius: 999px;
+      background: rgba(15,23,42,0.92); box-shadow: 0 0 0 1px rgba(148,163,184,0.5);
+      margin-bottom: 8px; position: relative; overflow: hidden;
+    }
+    .phone-notch::after {
+      content: ""; position: absolute; left: 50%; top: 50%; width: 52px; height: 6px;
+      border-radius: 999px; background: rgba(75,85,99,0.85); transform: translate(-50%, -50%);
+    }
+    .phone-status {
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 10px; color: var(--text-soft); margin-bottom: 6px;
+    }
+    .phone-status-left { display: flex; gap: 6px; align-items: center; }
+    .phone-dot { width: 7px; height: 7px; border-radius: 999px; background: #22c55e; }
+    .phone-status-right { display: flex; gap: 6px; align-items: center; }
+
+    .phone-card {
+      background: radial-gradient(circle at 0 0, rgba(59,130,246,0.15), rgba(15,23,42,0.92));
+      border-radius: 18px; border: 1px solid rgba(148,163,184,0.6);
+      padding: 12px; box-shadow: 0 12px 30px rgba(15,23,42,0.8);
+      margin-bottom: 10px; position: relative; overflow: hidden;
+      transition: border-color 0.3s;
+    }
+    .phone-card.identity-mode {
+      background: radial-gradient(circle at 0 0, rgba(236, 72, 153, 0.15), rgba(15,23,42,0.92));
+      border-color: rgba(236, 72, 153, 0.5);
+    }
+
+    .phone-card h2 {
+      font-size: 13px; text-transform: uppercase; letter-spacing: 0.16em;
+      color: #e5e7eb; margin: 0 0 4px;
+    }
+    .phone-subtitle { font-size: 11px; color: var(--text-soft); margin-bottom: 10px; min-height: 14px; }
+
+    .channel-pill {
+      display: inline-flex; align-items: center; gap: 7px;
+      border-radius: 999px; padding: 4px 8px; font-size: 10px;
+      background: rgba(15,23,42,0.7); border: 1px solid rgba(129,140,248,0.8);
+      transition: all 0.3s ease;
+    }
+    .channel-dot { width: 10px; height: 10px; border-radius: 999px; background: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,0.5); transition: background 0.3s; }
+    .channel-pill span.label { text-transform: uppercase; letter-spacing: 0.16em; font-weight: 600; color: #e0e7ff; }
+
+    /* --- TAB & RADIO STYLES --- */
+    .tab-nav {
+      display: flex; gap: 4px; margin-bottom: 8px;
+      background: rgba(15, 23, 42, 0.9); padding: 4px;
+      border-radius: 12px; border: 1px solid rgba(55,65,81,0.8);
+    }
+    .tab-btn {
+      flex: 1; text-align: center; padding: 6px 0; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; color: #64748b; cursor: pointer;
+      border-radius: 8px; transition: all 0.2s;
+    }
+    .tab-btn:hover { background: rgba(255,255,255,0.05); color: #94a3b8; }
+    .tab-btn.active { background: #4f46e5; color: white; box-shadow: 0 2px 8px rgba(79, 70, 229, 0.4); }
+    
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeUp 0.3s ease; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+
+    .toggle-card {
+      background: rgba(15,23,42,0.9); border-radius: 16px; padding: 10px;
+      border: 1px solid rgba(55,65,81,0.8); box-shadow: inset 0 0 0 1px rgba(15,23,42,0.9);
+      margin-bottom: 8px;
+    }
+
+    .toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 7px 6px; border-radius: 12px;
+      transition: background 0.2s ease, border-color 0.2s ease; cursor: pointer;
+    }
+    .toggle-row:hover { background: rgba(31,41,55,0.8); }
+    
+    .toggle-row.selected { background: rgba(236, 72, 153, 0.15); border: 1px solid rgba(236, 72, 153, 0.3); }
+
+    .radio-circle {
+      width: 18px; height: 18px; border-radius: 50%; border: 2px solid #4b5563; position: relative;
+    }
+    .toggle-row.selected .radio-circle { border-color: #ec4899; background: #ec4899; box-shadow: 0 0 10px rgba(236, 72, 153, 0.4); }
+    .toggle-row.selected .radio-circle::after {
+        content: ''; position: absolute; top: 50%; left: 50%; width: 6px; height: 6px;
+        background: white; border-radius: 50%; transform: translate(-50%, -50%);
+    }
+
+    .toggle-label { display: flex; flex-direction: column; font-size: 11px; }
+    .toggle-label span.title { font-weight: 600; color: #e5e7eb; }
+    .toggle-label span.sub { color: #9ca3af; font-size: 10px; }
+
+    .switch { position: relative; width: 40px; height: 22px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #374151; transition: .22s; border-radius: 999px;
+      box-shadow: 0 0 0 1px rgba(15,23,42,0.9);
+    }
+    .slider:before {
+      position: absolute; content: ""; height: 16px; width: 16px;
+      left: 3px; bottom: 3px; background-color: #f9fafb; transition: .22s; border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .switch input:checked + .slider { background: linear-gradient(120deg, #4f46e5, #06b6d4); }
+    .switch input:checked + .slider:before { transform: translateX(18px); }
+
+    .phone-footer { margin-top: 6px; font-size: 10px; color: #9ca3af; display: flex; justify-content: space-between; align-items: center; }
+    .risk-pill { padding: 3px 7px; border-radius: 999px; font-size: 10px; display: inline-flex; align-items: center; gap: 4px; border: 1px solid rgba(248,250,252,0.08); background: rgba(0,0,0,0.2); }
+
+    /* Right side */
+    .panel { border-radius: 20px; padding: 16px 16px 14px; background: radial-gradient(circle at 0 0, rgba(248,250,252,0.08), rgba(15,23,42,0.96)); border: 1px solid rgba(148,163,184,0.4); box-shadow: 0 16px 40px rgba(15,23,42,0.9); transition: border-color 0.3s; }
+    .panel.identity-focus { border-color: rgba(236, 72, 153, 0.4); }
+
+    .panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .panel-title-group { display: flex; flex-direction: column; }
+    .panel-title-group h2 { font-size: 14px; margin: 0; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+    .panel-title-group span { font-size: 11px; color: var(--text-soft); }
+    .tiny-pill { padding: 3px 8px; border-radius: 999px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.15em; border: 1px solid rgba(129,140,248,0.7); color: #c7d2fe; background: rgba(15,23,42,0.8); }
+    
+    .mini-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.6fr); gap: 12px; margin-top: 8px; }
+    .badge-block { background: rgba(15,23,42,0.86); border-radius: 14px; padding: 10px; border: 1px solid rgba(55,65,81,0.7); font-size: 11px; color: var(--text-soft); }
+    .badge-block-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 4px; color: #e5e7eb; }
+    .badge-line { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+    .channel-chip { padding: 3px 7px; border-radius: 999px; font-size: 10px; display: inline-flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); }
+    .channel-chip span.dot { width: 8px; height: 8px; border-radius: 999px; }
+    .metric-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; font-size: 11px; color: var(--text-soft); }
+    .metric-label { display: flex; align-items: center; gap: 4px; }
+    .metric-label span.dot { width: 6px; height: 6px; border-radius: 999px; }
+    .metric-value { font-family: "SF Mono", ui-monospace, monospace; font-size: 11px; color: #e5e7eb; }
+    .summary-line { margin-top: 8px; font-size: 11px; color: var(--text-soft); line-height: 1.4; }
+    .glow-text { color: #a5b4fc; font-weight: 600; text-shadow: 0 0 10px rgba(165,180,252,0.3); }
+    .glow-warn { color: #fca5a5; font-weight: 600; text-shadow: 0 0 10px rgba(248, 113, 113, 0.3); }
+  </style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="brand-logo"> <img 
+    src="data:image/png;base64,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AAAAAiWBfZuXqb8BAAAAAMDISgL7euxnfwMAAAAAgJGVBHYAAAAAALgagR0AAAAAAAICOwAAAAAABAR2AAAAAAAICOwAAAAAABAQ2AEAAAAAICCwAwAAAABAQGAHAAAAAICAwA4AAAAAAAGBHQAAAAAAAiWBfZuXqb8BAAAAAMDISgL7euxnfwMAAAAAgJGVBHYAAAAAALgagR0AAAAAAAICOwAAAAAABAR2AAAAAAAICOwAAAAAABAQ2AEAAAAAICCwAwAAAABAQGAHAAAAAICAwA4AAAAAAAGBHQAAAAAAAiWBfZuXqb8BAAAAAMDISgL7euxnfwMAAAAAgJGVBHYAAAAAALgagR0AAAAAAAICOwAAAAAABAR2AAAAAAAICOwAAAAAABAQ2AEAAAAAICCwAwAAAABAQGAHAAAAAICAwA4AAAAAAAGBHQAAAAAAAiWBfZuXqb8BAAAAAMDISgL7euxnfwMAAAAAgJGVBHYAAAAAALgagR0AAAAAAAICOwAAAAAABAR2AAAAAAAICOwAAAAAABAQ2AEAAAAAICCwAwAAAABAQGAHAAAAAICAwA4AAAAAAAGBHQAAAAAAAiWBfZuXqb8BAAAAAMDISgL7euxnfwMAAAAAgJGVBHYAAAAAALgagR0AAAAAAAICOwAAAAAABAR2AAAAAAAICOwAAAAAABAQ2AEAAAAAICCwAwAAAABAQGAHAAAAAICAwA4AAAAAAAGBHQAAAAAAAiWBfZuXqb8BAAAAAMDISgL7euxnfwMAAAAAgJGVBHYAAAAAALgagR0AAAAAAAICOwAAAAAABAR2AAAAAAAICOwAAAAAABAQ2AEAAAAAICCwAwAAAABAQGAHAAAAAICAwA4AAAAAAAGBHQAAAAAAAiWBfZuXqb8BAAAAAMDISgL7euxnfwMAAAAAgJGVBHYAAAAAALgagR0AAAAAAAICOwAAAAAABAR2AAAAAAAICOwAAAAAABAQ2AEAAAAAICCwAwAAAABAQGAHAAAAAICAwA4AAAAAAAGBHQAAAAAAAiWBfZuXqb8BAAAAAMDISgL7euxnfwMAAAAAgJGVBHYAAAAAALgagR0AAAAAAAICOwAAAAAABAR2AAAAAAAICOwAAAAAABAQ2AEAAAAAICCwAwAAAABAQGAHAAAAAICAwA4AAAAAAAGBHQAAAAAAAiWBfZuXqb8BAAAAAMDISgL7euxnfwMAAAAAgJGVBHYAAAAAALgagR0AAAAAAAICOwAAAAAABAR2AAAAAAAICOwAAAAAABAQ2AEAAAAAICCwAwAAAABAQGAHAAAAAICAwA4AAAAAAAGBHQAAAAAAAiWBfZuXqb8BAAAAAMDISgL7euxnfwMAAAAAgJGVBHYAAAAAALgagR0AAAAAAAICOwAAAAAABAR2AAAAAAAICOwAAAAAABAQ2AEAAAAAICCwAwAAAABAQGAHAAAAAICAwA4AAAAAAAGBHQAAAAAAAiWBfZuXqb8BAAAAAMDISgL7euxnfwMAAAAAgJGVBHYAAAAAALgagR0AAAAAAAIP/eFH2eZlWo/9/Ke1Px9a++2ptc/fv/Rra+3Lzbd6e3t7e3t7e3vf0fuhtVdPrX36fV7e+a8Fecnfrf3x2Np7nyW8vb29vb29vb3bzWeJX1p7/dyfb763RHlg/9raU/81AABorb19bO3jz/qLMf9Pz78P27xMH479r/7rAADw2NrDz/ocURbYn31t7U1/AwCAx9Y+9je45bMEAAD/5u7+oc42L5O11lprrbX9wn/pf2estdZaa+397vOf787tD2+ttdZaa+93+xu85KXfHWuttdZae98LAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABf2DZvYqdkluqeaAAAAAElFTkSuQmCC" 
+    alt="Logo" 
+    style="height: 25px; width: auto; border-radius: 0px;"
+  /></div>
+    <div class="brand-text">
+      <span>HDFC Bank</span>
+      <span>Device Context Studio • TrustSync Engine</span>
+    </div>
+  </div>
+  <div class="pill-header"><span class="pill-dot pulse"></span><span id="sysStatus">Live Routing Preview</span></div>
+</header>
+
+<main>
+  <div class="layout">
+    <!-- LEFT: PHONE + TOGGLES -->
+    <section>
+      <div class="section-title">Device Simulator</div>
+      <div class="phone-shell">
+        <div class="phone-inner" id="phoneInner">
+          <div class="scan-line"></div> <!-- Scan Effect -->
+          <div class="phone-notch"></div>
+
+          <div class="phone-status">
+            <div class="phone-status-left"><div class="phone-dot"></div><span id="statusSignal">TrustSync • Online</span></div>
+            <div class="phone-status-right"><span>9:41</span><span>📶</span><span id="statusNet">📡</span></div>
+          </div>
+
+          <div class="phone-card" id="phoneCard">
+            <h2 id="cardTitle">Route Analysis...</h2>
+            <div class="phone-subtitle" id="cardSub">Flip the switches below to simulate context.</div>
+            <div class="channel-pill" id="channelPill">
+              <div class="channel-dot" id="channelDot"></div>
+              <span class="label" id="channelLabel">PUSH</span>
+              <span id="channelDesc" style="font-size:10px;color:#c7d2fe; margin-left:4px;">Secure App Push</span>
+            </div>
+          </div>
+
+          <!-- TAB SWITCHER -->
+          <div class="tab-nav">
+            <div class="tab-btn active" id="btn-network" onclick="switchTab('network', this)">App State</div>
+            <div class="tab-btn" id="btn-identity" onclick="switchTab('identity', this)">Identity</div>
+          </div>
+
+          <!-- TAB 1: APP STATE (Default) -->
+          <div id="tab-network" class="tab-content active toggle-card">
+            <div class="toggle-row">
+              <div class="toggle-label"><span class="title">App installed</span><span class="sub">HDFC Bank app on this device</span></div>
+              <label class="switch"><input type="checkbox" id="hasApp" checked onchange="updateUI()"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-label"><span class="title">User active in app</span><span class="sub">Already inside the app screen</span></div>
+              <label class="switch"><input type="checkbox" id="isActive" onchange="updateUI()"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-label"><span class="title">Internet available</span><span class="sub">Good data/Wi-Fi for push</span></div>
+              <label class="switch"><input type="checkbox" id="online" checked onchange="updateUI()"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle-label"><span class="title">WhatsApp opt-in</span><span class="sub">Customer registered for WA alerts</span></div>
+              <label class="switch"><input type="checkbox" id="whatsapp" checked onchange="updateUI()"><span class="slider"></span></label>
+            </div>
+          </div>
+
+          <!-- TAB 2: IDENTITY -->
+          <div id="tab-identity" class="tab-content toggle-card">
+            <div class="toggle-row selected" id="row_KNOWN" onclick="setIdentity('KNOWN')">
+              <div class="toggle-label">
+                <span class="title">Trusted Device</span>
+                <span class="sub">Registered in backend. Fast Login.</span>
+              </div>
+              <div class="radio-circle"></div>
+            </div>
+            
+            <div class="toggle-row" id="row_NEW" onclick="setIdentity('NEW')">
+              <div class="toggle-label">
+                <span class="title">New Device</span>
+                <span class="sub">ID Mismatch. Triggers Binding.</span>
+              </div>
+              <div class="radio-circle"></div>
+            </div>
+            
+            <!-- Hidden Inputs -->
+            <input type="radio" name="devStatus" value="KNOWN" id="rad_KNOWN" checked style="display:none">
+            <input type="radio" name="devStatus" value="NEW" id="rad_NEW" style="display:none">
+          </div>
+
+          <div class="phone-footer">
+            <div class="risk-pill" id="riskPill"><span>🛡️</span><span id="riskLabel">Risk: Low</span></div>
+            <span id="latencyLabel">Est. latency: < 2s</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT: DASHBOARD -->
+    <section>
+      <div class="section-title">Routing Logic</div>
+      <div class="panel" id="logicPanel">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <h2 id="panelMainTitle">Context: Connectivity</h2>
+            <span id="headlineText">App First • Push with WhatsApp fallback</span>
+          </div>
+          <span class="tiny-pill" id="modeTag">App First • SMS Last</span>
+        </div>
+
+        <div class="mini-grid">
+          <div class="badge-block">
+            <div class="badge-block-title">Primary Channel</div>
+            <div class="badge-line">
+              <span>Chosen Channel</span>
+              <span class="channel-chip" id="primaryChip">
+                <span class="dot" id="primaryDot"></span>
+                <span id="primaryLabel">PUSH</span>
+              </span>
+            </div>
+            <div class="badge-line">
+              <span>Fallback Path</span>
+              <span class="channel-chip" id="fallbackChip">
+                <span class="dot" id="fallbackDot"></span>
+                <span id="fallbackLabel">WhatsApp → SMS</span>
+              </span>
+            </div>
+            <div class="summary-line" id="logicSummary">
+              With current toggles, TrustSync will <span class="glow-text">send a secure push</span> to this device. If the app
+              doesn't ACK in a few seconds, it gracefully falls back to WhatsApp, then SMS as last resort.
+            </div>
+          </div>
+
+          <div class="badge-block">
+            <div class="badge-block-title" id="metricTitle">Real-time Metrics</div>
+            <div class="metric-row">
+              <div class="metric-label">
+                <span class="dot" style="background:#22c55e;"></span>
+                <span>Success Rate</span>
+              </div>
+              <div class="metric-value" id="successMetric">≈ 95%</div>
+            </div>
+            <div class="metric-row">
+              <div class="metric-label">
+                <span class="dot" style="background:#60a5fa;"></span>
+                <span>Latency</span>
+              </div>
+              <div class="metric-value" id="latencyMetric">&lt; 2 seconds</div>
+            </div>
+            <div class="metric-row">
+              <div class="metric-label">
+                <span class="dot" style="background:#facc15;"></span>
+                <span>Fraud Risk</span>
+              </div>
+              <div class="metric-value" id="riskMetric">Very Low</div>
+            </div>
+            <div class="metric-row">
+              <div class="metric-label">
+                <span class="dot" style="background:#f97316;"></span>
+                <span>Cost</span>
+              </div>
+              <div class="metric-value" id="costMetric">▼ 40% vs SMS-only</div>
+            </div>
+            <div class="summary-line">
+              <span style="opacity:0.6;font-size:10px;" id="panelFooter">Adjust toggles to see real-time route changes.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script>
+  // -- DOM ELEMENTS --
+  const hasAppEl = document.getElementById('hasApp');
+  const isActiveEl = document.getElementById('isActive');
+  const onlineEl = document.getElementById('online');
+  const whatsappEl = document.getElementById('whatsapp');
+  const sysStatus = document.getElementById('sysStatus');
+
+  const channelPill = document.getElementById('channelPill');
+  const channelDot = document.getElementById('channelDot');
+  const channelLabel = document.getElementById('channelLabel');
+  const channelDesc = document.getElementById('channelDesc');
+  const cardTitle = document.getElementById('cardTitle');
+  const cardSub = document.getElementById('cardSub');
+  const phoneCard = document.getElementById('phoneCard');
+
+  const riskPill = document.getElementById('riskPill');
+  const riskLabel = document.getElementById('riskLabel');
+  const latencyLabel = document.getElementById('latencyLabel');
+  const statusSignal = document.getElementById('statusSignal');
+  const statusNet = document.getElementById('statusNet');
+  const phoneInner = document.getElementById('phoneInner');
+
+  // Dashboard Elements
+  const logicPanel = document.getElementById('logicPanel');
+  const panelMainTitle = document.getElementById('panelMainTitle');
+  const metricTitle = document.getElementById('metricTitle');
+  const panelFooter = document.getElementById('panelFooter');
+  
+  const headlineText = document.getElementById('headlineText');
+  const modeTag = document.getElementById('modeTag');
+
+  const primaryDot = document.getElementById('primaryDot');
+  const primaryLabel = document.getElementById('primaryLabel');
+  const fallbackDot = document.getElementById('fallbackDot');
+  const fallbackLabel = document.getElementById('fallbackLabel');
+
+  const logicSummary = document.getElementById('logicSummary');
+  const successMetric = document.getElementById('successMetric');
+  const latencyMetric = document.getElementById('latencyMetric');
+  const riskMetric = document.getElementById('riskMetric');
+  const costMetric = document.getElementById('costMetric');
+
+  let activeTab = 'network'; // Track current tab
+
+  // -- LOGIC: TAB SWITCHING --
+  function switchTab(tabName, btnElement) {
+    activeTab = tabName;
+
+    // 1. Visual Tab Switch
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btnElement.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+    document.getElementById('tab-' + tabName).classList.add('active');
+
+    // 2. Trigger Scan Animation
+    phoneInner.classList.remove('scanning');
+    void phoneInner.offsetWidth; // Trigger reflow
+    phoneInner.classList.add('scanning');
+
+    // 3. Update Dashboard Visuals for Context
+    if (tabName === 'identity') {
+      panelMainTitle.textContent = "Context: Identity & Trust";
+      metricTitle.textContent = "Security Metrics";
+      panelFooter.textContent = "Identity affects route selection significantly.";
+      logicPanel.classList.add('identity-focus');
+      phoneCard.classList.add('identity-mode');
+    } else {
+      panelMainTitle.textContent = "Context: Connectivity";
+      metricTitle.textContent = "Performance Metrics";
+      panelFooter.textContent = "Network availability dictates speed.";
+      logicPanel.classList.remove('identity-focus');
+      phoneCard.classList.remove('identity-mode');
+    }
+
+    // 4. Force UI Update to refresh text
+    updateUI();
+  }
+
+  // -- LOGIC: IDENTITY RADIO BUTTONS --
+  function setIdentity(val) {
+    document.getElementById('row_KNOWN').classList.remove('selected');
+    document.getElementById('row_NEW').classList.remove('selected');
+    document.getElementById('row_' + val).classList.add('selected');
+    document.getElementById('rad_' + val).checked = true;
+    updateUI();
+  }
+
+  
+  // -- BACKEND SYNC --
+  async function syncToBackend(context) {
+    sysStatus.textContent = "Syncing...";
+    
+    try {
+      
+      const response = await fetch('http://localhost:4000/update-context', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: 'demo_user', 
+          context: context
+        })
+      });
+
+      if(response.ok) {
+        // 2. Visual Success Feedback
+        sysStatus.textContent = "Live • Synced to Engine";
+        sysStatus.style.color = "#a3e635"; // Lime Green
+        
+        // Reset color after a moment
+        setTimeout(() => { 
+           sysStatus.style.color = "white"; 
+           sysStatus.textContent = "Live Routing Preview";
+        }, 2000);
+      }
+    } catch (e) {
+      console.error("Sync Failed:", e);
+      sysStatus.textContent = "❌ Connection Error";
+      sysStatus.style.color = "#f87171"; // Red
+    }
+  }
+
+  // -- MAIN UI UPDATE LOGIC --
+  function updateUI() {
+    // 1. Trigger micro-animation
+    phoneInner.classList.remove('scanning');
+    void phoneInner.offsetWidth;
+    phoneInner.classList.add('scanning');
+
+    const hasApp = hasAppEl.checked;
+    const isActive = isActiveEl.checked;
+    const online = onlineEl.checked;
+    const wa = whatsappEl.checked;
+    const isNewDevice = document.getElementById('rad_NEW').checked;
+
+    // Context object 
+    const context = { has_app: hasApp, is_active: isActive, device_online: online, whatsapp_opt_in: wa, device_status: isNewDevice ? 'NEW' : 'KNOWN' };
+    syncToBackend(context);
+
+    // --- DECISION ENGINE ---
+    let primary = 'SMS', primaryColor = '#f97316', fallback = 'None', fallbackColor = '#4b5563';
+    let desc = '', headline = '', mode = '', success = '', latency = '', risk = '', cost = '';
+    let riskText = '', latencyText = '';
+    let cardTitleText = '';
+
+    // Logic Tree
+    if (!online) {
+      primary = 'SMS (no data)'; primaryColor = '#f97316';
+      fallback = 'None';
+      desc = 'Device offline, forced to SMS';
+      headline = 'Offline Device • SMS escape hatch';
+      mode = 'Degraded Mode';
+      success = '≈ 75%'; latency = '10–20s'; risk = 'Elevated'; cost = 'High';
+      riskText = 'Risk: Elevated'; latencyText = 'Est. 10–20s';
+      statusSignal.textContent = 'TrustSync • Offline'; statusNet.textContent = '📴';
+      cardTitleText = "Network Failure";
+
+    } else if (isNewDevice) {
+      primary = 'SMS + OTP'; primaryColor = '#f97316';
+      fallback = 'Voice Call'; fallbackColor = '#f97316';
+      desc = 'Device Binding Protocol';
+      headline = 'New Device • Strict Auth';
+      mode = 'Binding Flow';
+      success = '≈ 99%'; latency = '5–10s'; risk = 'Med (Validation)'; cost = 'Standard';
+      riskText = 'Risk: Validating'; latencyText = 'Est. 5–10s';
+      statusSignal.textContent = 'TrustSync • Unbound'; statusNet.textContent = '⚠️';
+      cardTitleText = "Identity Mismatch";
+
+    } else if (hasApp && isActive) {
+      primary = 'IN-APP FLASH'; primaryColor = '#22c55e';
+      fallback = 'PUSH → WA'; fallbackColor = '#4f46e5';
+      desc = 'Zero-latency banner';
+      headline = 'In-App First • No SIM needed';
+      mode = 'App Active • Max Speed';
+      success = '≈ 98%'; latency = '< 1 second'; risk = 'Minimal'; cost = '▼ 50% vs SMS';
+      riskText = 'Risk: Minimal'; latencyText = 'Est. < 1s';
+      statusSignal.textContent = 'TrustSync • Online'; statusNet.textContent = '📡';
+      cardTitleText = "User Active In-App";
+
+    } else if (hasApp) {
+      primary = 'PUSH'; primaryColor = '#4f46e5';
+      fallback = wa ? 'WA → SMS' : 'SMS'; fallbackColor = wa ? '#0d9488' : '#f97316';
+      desc = 'Secure Push Notification';
+      headline = 'App Push • Intelligent Fallback';
+      mode = 'App First • SMS Last';
+      success = '≈ 95%'; latency = '< 2 seconds'; risk = 'Very Low'; cost = '▼ 40% vs SMS';
+      riskText = 'Risk: Very low'; latencyText = 'Est. < 2s';
+      statusSignal.textContent = 'TrustSync • Online'; statusNet.textContent = '📡';
+      cardTitleText = "Silent Push Check";
+
+    } else if (wa) {
+      primary = 'WHATSAPP'; primaryColor = '#0d9488';
+      fallback = 'SMS'; fallbackColor = '#f97316';
+      desc = 'Verified WA Business Msg';
+      headline = 'WhatsApp First (No App)';
+      mode = 'WA + SMS Mirror';
+      success = '≈ 90%'; latency = '2–4 seconds'; risk = 'Low'; cost = '▼ 20% vs SMS';
+      riskText = 'Risk: Low'; latencyText = 'Est. 2–4s';
+      statusSignal.textContent = 'TrustSync • Online'; statusNet.textContent = '📡';
+      cardTitleText = "App Not Found";
+    }
+
+    
+    if (activeTab === 'identity') {
+        if (isNewDevice) cardTitle.textContent = "Unknown Device ID";
+        else cardTitle.textContent = "Trusted Device ID";
+        
+        
+        cardSub.textContent = isNewDevice ? "Triggering step-up auth (SMS)." : "Allowing smart push channels.";
+    } else {
+        
+        cardTitle.textContent = cardTitleText;
+        cardSub.textContent = "Optimizing for " + (online ? "speed & cost." : "deliverability.");
+    }
+
+    // --- APPLY TO DOM ---
+    channelLabel.textContent = primary;
+    channelDesc.innerHTML = desc;
+    channelDot.style.background = primaryColor;
+    channelPill.style.borderColor = primaryColor + 'cc';
+
+    riskLabel.textContent = riskText;
+    latencyLabel.innerHTML = latencyText;
+
+    headlineText.textContent = headline;
+    modeTag.textContent = mode;
+
+    primaryLabel.textContent = primary;
+    primaryDot.style.background = primaryColor;
+    fallbackLabel.textContent = fallback;
+    fallbackDot.style.background = fallbackColor;
+
+    // Summary Text Generation
+    let summaryHTML = '';
+    if (isNewDevice && online) {
+        summaryHTML = 'Device is marked as <span class="glow-warn">Untrusted</span>. TrustSync overrides network preference and forces <span class="glow-warn">SMS + OTP</span> to bind the device.';
+    } else if (hasApp && online && isActive) {
+        summaryHTML = 'User is <span class="glow-text">Active</span>. Engine bypasses Push/SMS and renders a <span class="glow-text">Flash Banner</span> directly in the session.';
+    } else if (hasApp && online) {
+        summaryHTML = 'Device trusted & app installed. TrustSync sends <span class="glow-text">Secure Push</span>. If no ACK in 5s, it falls back to <span class="glow-text">' + fallback + '</span>.';
+    } else if (!online) {
+        summaryHTML = 'Device is <span class="glow-warn">Offline</span>. Engine immediately dispatches <span class="glow-warn">SMS</span> to ensure delivery.';
+    } else {
+        summaryHTML = 'App missing. TrustSync uses <span class="glow-text">' + primary + '</span> as the verified channel, falling back to SMS.';
+    }
+    logicSummary.innerHTML = summaryHTML;
+
+    successMetric.textContent = success;
+    latencyMetric.innerHTML = latency;
+    riskMetric.textContent = risk;
+    costMetric.textContent = cost;
+  }
+
+  // Initial Run
+  updateUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>TrustSync • Live Operations</title>
+  <style>
+    :root { --bg-grad-1: #050816; --bg-grad-2: #111827; --accent: #4f46e5; --text-main: #e5e7eb; --text-soft: #9ca3af; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, sans-serif; background: radial-gradient(circle at 50% -20%, #1e1b4b, #0f172a 40%, #000000); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+    
+    header { height: 60px; padding: 0 24px; background: rgba(15, 23, 42, 0.9); border-bottom: 1px solid rgba(148,163,184,0.2); display: flex; align-items: center; justify-content: space-between; }
+    .brand { font-weight: 700; font-size: 18px; display: flex; align-items: center; gap: 10px; color: #fff; }
+    .tag { background: #4f46e5; font-size: 10px; padding: 2px 6px; border-radius: 4px; }
+    
+    main { flex: 1; display: grid; grid-template-columns: 320px 1fr; overflow: hidden; }
+    
+    .event-list { background: rgba(17, 24, 39, 0.6); border-right: 1px solid rgba(148,163,184,0.2); overflow-y: auto; display: flex; flex-direction: column; }
+    .list-header { padding: 12px 16px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-soft); border-bottom: 1px solid rgba(148,163,184,0.2); background: rgba(0,0,0,0.2); }
+    
+    .event-item { padding: 16px; border-bottom: 1px solid rgba(148,163,184,0.2); cursor: pointer; transition: background 0.2s; }
+    .event-item:hover { background: rgba(255,255,255,0.03); }
+    .event-item.active { background: rgba(79, 70, 229, 0.15); border-left: 3px solid #6366f1; }
+    
+    .evt-top { display: flex; justify-content: space-between; margin-bottom: 6px; }
+    .evt-id { font-family: monospace; font-size: 11px; color: #6366f1; font-weight: bold; }
+    .evt-time { font-size: 11px; color: var(--text-soft); }
+    .evt-main { display: flex; justify-content: space-between; align-items: center; }
+    .evt-user { font-weight: 600; font-size: 14px; }
+    .badge { font-size: 10px; padding: 3px 8px; border-radius: 12px; font-weight: 600; text-transform: uppercase; text-align: right; color: #94a3b8; }
+    .active .badge { color: #e0e7ff; }
+
+    .detail-view { padding: 40px; overflow-y: auto; background: radial-gradient(circle at 100% 100%, rgba(79, 70, 229, 0.05), transparent); }
+
+    .detail-card { background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(148,163,184,0.2); border-radius: 16px; padding: 24px; max-width: 800px; margin: 0 auto; }
+    .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; border-bottom: 1px solid rgba(148,163,184,0.2); padding-bottom: 16px; }
+    .card-title h1 { margin: 0; font-size: 20px; color: white; }
+    .card-title span { font-family: monospace; color: var(--text-soft); font-size: 12px; }
+    .big-status .val { font-size: 14px; font-weight: 700; display: block; margin-bottom: 4px; }
+
+    .txn-card { 
+      background: #0f172a; border: 1px solid #334155; 
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); 
+      border-radius: 16px; padding: 32px; max-width: 900px; margin: 0 auto; 
+    }
+    .txn-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; }
+    .txn-title h1 { margin: 0 0 8px 0; font-size: 28px; letter-spacing: 1px; color: #f8fafc; }
+    .txn-title .uuid { font-family: monospace; color: #64748b; font-size: 12px; }
+    
+    .status-pill { font-size: 11px; font-weight: 800; letter-spacing: 1px; padding: 6px 12px; border-radius: 6px; text-transform: uppercase; display: inline-block; }
+    .status-pill.pending { background: rgba(249, 115, 22, 0.15); color: #fb923c; }
+    .status-pill.verified { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+    .status-pill.fallback { background: rgba(239, 68, 68, 0.15); color: #fca5a5; }
+    .status-pill.declined { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); }
+
+    .action-area { text-align: right; min-width: 140px; }
+    .simulate-btn { 
+      background: #4f46e5; color: white; border: none; padding: 8px 16px; 
+      border-radius: 6px; font-weight: 600; font-size: 11px; cursor: pointer; 
+      margin-top: 8px; width: 100%; transition: all 0.2s;
+    }
+    .simulate-btn:hover { background: #4338ca; }
+    .countdown-text { font-size: 10px; color: #94a3b8; margin-top: 4px; display: block; font-family: monospace; }
+
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 32px; }
+    .info-box { background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 16px; }
+    .info-label { font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: block; }
+    .info-val { font-size: 16px; font-weight: 600; color: #f1f5f9; }
+    
+    .timeline { position: relative; border-left: 2px solid #334155; margin-left: 8px; padding-left: 24px; }
+    .log-entry { position: relative; margin-bottom: 24px; }
+    .log-dot { position: absolute; left: -31px; top: 2px; width: 12px; height: 12px; border-radius: 50%; background: #0f172a; border: 2px solid #64748b; }
+    .log-entry.latest .log-dot { border-color: #22c55e; background: #22c55e; box-shadow: 0 0 10px rgba(34,197,94,0.4); }
+    .log-entry.fallback .log-dot { border-color: #f97316; background: #f97316; }
+    .log-entry.declined .log-dot { border-color: #ef4444; background: #ef4444; }
+    .log-time { font-family: monospace; font-size: 11px; color: #64748b; margin-bottom: 4px; display: block; }
+    .log-msg { font-size: 14px; color: #cbd5e1; line-height: 1.5; }
+  </style>
+</head>
+<body>
+<header>
+  <div class="brand">
+  <img 
+    src="data:image/png;base64,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AAAAAiWBfZuXqb8BAAAAAMDISgL7euxnfwMAAAAAgJGVBHYAAAAAALgagR0AAAAAAAICOwAAAAAABAR2AAAAAAAICOwAAAAAABAQ2AEAAAAAICCwAwAAAABAQGAHAAAAAICAwA4AAAAAAAGBHQAAAAAAAiWBfZuXqb8BAAAAAMDISgL7euxnfwMAAAAAgJGVBHYAAAAAALgagR0AAAAAAAICOwAAAAAABAR2AAAAAAAICOwAAAAAABAQ2AEAAAAAICCwAwAAAABAQGAHAAAAAICAwA4AAAAAAAGBHQAAAAAAAiWBfZuXqb8BAAAAAMDISgL7euxnfwMAAAAAgJGVBHYAAAAAALgagR0AAAAAAAICOwAAAAAABAR2AAAAAAAICOwAAAAAABAQ2AEAAAAAICCwAwAAAABAQGAHAAAAAICAwA4AAAAAAAGBHQAAAAAAAiWBfZuXqb8BAAAAAMDISgL7euxnfwMAAAAAgJGVBHYAAAAAALgagR0AAAAAAAICOwAAAAAABAR2AAAAAAAICOwAAAAAABAQ2AEAAAAAICCwAwAAAABAQGAHAAAAAICAwA4AAAAAAAGBHQAAAAAAAiWBfZuXqb8BAAAAAMDISgL7euxnfwMAAAAAgJGVBHYAAAAAALgagR0AAAAAAAICOwAAAAAABAR2AAAAAAAICOwAAAAAABAQ2AEAAAAAICCwAwAAAABAQGAHAAAAAICAwA4AAAAAAAGBHQAAAAAAAiWBfZuXqb8BAAAAAMDISgL7euxnfwMAAAAAgJGVBHYAAAAAALgagR0AAAAAAAICOwAAAAAABAR2AAAAAAAICOwAAAAAABAQ2AEAAAAAICCwAwAAAABAQGAHAAAAAICAwA4AAAAAAAGBHQAAAAAAAiWBfZuXqb8BAAAAAMDISgL7euxnfwMAAAAAgJGVBHYAAAAAALgagR0AAAAAAAICOwAAAAAABAR2AAAAAAAICOwAAAAAABAQ2AEAAAAAICCwAwAAAABAQGAHAAAAAICAwA4AAAAAAAGBHQAAAAAAAiWBfZuXqb8BAAAAAMDISgL7euxnfwMAAAAAgJGVBHYAAAAAALgagR0AAAAAAAICOwAAAAAABAR2AAAAAAAICOwAAAAAABAQ2AEAAAAAICCwAwAAAABAQGAHAAAAAICAwA4AAAAAAAGBHQAAAAAAAiWBfZuXqb8BAAAAAMDISgL7euxnfwMAAAAAgJGVBHYAAAAAALgagR0AAAAAAAICOwAAAAAABAR2AAAAAAAICOwAAAAAABAQ2AEAAAAAICCwAwAAAABAQGAHAAAAAICAwA4AAAAAAAGBHQAAAAAAAiWBfZuXqb8BAAAAAMDISgL7euxnfwMAAAAAgJGVBHYAAAAAALgagR0AAAAAAAICOwAAAAAABAR2AAAAAAAICOwAAAAAABAQ2AEAAAAAICCwAwAAAABAQGAHAAAAAICAwA4AAAAAAAGBHQAAAAAAAiWBfZuXqb8BAAAAAMDISgL7euxnfwMAAAAAgJGVBHYAAAAAALgagR0AAAAAAAIP/eFH2eZlWo/9/Ke1Px9a++2ptc/fv/Rra+3Lzbd6e3t7e3t7e3vf0fuhtVdPrX36fV7e+a8Fecnfrf3x2Np7nyW8vb29vb29vb3bzWeJX1p7/dyfb763RHlg/9raU/81AABorb19bO3jz/qLMf9Pz78P27xMH479r/7rAADw2NrDz/ocURbYn31t7U1/AwCAx9Y+9je45bMEAAD/5u7+oc42L5O11lprrbX9wn/pf2estdZaa+397vOf787tD2+ttdZaa+93+xu85KXfHWuttdZae98LAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABf2DZvYqdkluqeaAAAAAElFTkSuQmCC" 
+    alt="Logo" 
+    style="height: 24px; width: auto; border-radius: 4px;"
+  />
+  HDFC TrustSync Engine
+  <span class="tag">OPS DASHBOARD</span>
+</div>
+
+<div id="connStatus" style="font-size:13px; color:#9ca3af;">● Checking...</div>
+</header>
+<main>
+  <div class="event-list" id="eventList"></div>
+  <div class="detail-view" id="detailView"></div>
+</main>
+
+<script>
+  let selectedEventId = null;
+  let allEvents = [];
+  const eventListEl = document.getElementById('eventList');
+  const detailViewEl = document.getElementById('detailView');
+  const connStatusEl = document.getElementById('connStatus');
+
+function updateConnectionStatus(isConnected) {
+  if (isConnected) {
+    connStatusEl.innerHTML = '● Backend Connected';
+    connStatusEl.style.color = '#4ade80'; // Green
+  } else {
+    connStatusEl.innerHTML = '● Backend Offline';
+    connStatusEl.style.color = '#ef4444'; // Red
+  }
+}
+
+  function fmtTime(iso) {
+    if (!iso) return '--';
+    return new Date(iso).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute:'2-digit', second:'2-digit' });
+  }
+
+  async function forceAck(eventId) {
+    try {
+      await fetch('/ack', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ event_id: eventId, channel: 'MANUAL_OVERRIDE' })
+      });
+      fetchEvents(); 
+    } catch(e) { console.error(e); }
+  }
+
+  async function fetchEvents() {
+  try {
+    const res = await fetch('/events?limit=20&t=' + Date.now());
+    
+    // Check if request was successful
+    if (!res.ok) throw new Error("API Error");
+
+    // Success -> Update Status Green
+    updateConnectionStatus(true); 
+
+    const data = await res.json();
+    allEvents = data.events; 
+    renderList();
+    
+    if (!selectedEventId && allEvents.length > 0) {
+        selectedEventId = allEvents[0].event_id;
+    }
+    if (selectedEventId) {
+        const evt = allEvents.find(e => e.event_id === selectedEventId);
+        if(evt) renderDetail(evt);
+    }
+
+  } catch (e) { 
+    console.error(e); 
+    // Error -> Update Status Red
+    updateConnectionStatus(false); 
+  }
+}
+
+  function renderList() {
+    const scrollPos = eventListEl.scrollTop;
+    let html = '<div class="list-header">Recent Events</div>';
+    allEvents.forEach(evt => {
+      const isActive = evt.event_id === selectedEventId ? 'active' : '';
+      let idColor = '#6366f1'; 
+      if(evt.event_type === 'TRANSACTION_OTP') idColor = '#60a5fa'; 
+      if(evt.event_type === 'NEW_DEVICE_LOGIN') idColor = '#f472b6'; 
+
+      html += `
+        <div class="event-item ${isActive}" onclick="selectEvent('${evt.event_id}')">
+          <div class="evt-top">
+            <span class="evt-id" style="color:${idColor}">${evt.event_type}</span>
+            <span class="evt-time">${fmtTime(evt.sent_ts)}</span>
+          </div>
+          <div class="evt-main">
+            <span class="evt-user">${evt.user_id}</span>
+            <span class="badge">${evt.chosen_channel || '...'}</span>
+          </div>
+        </div>
+      `;
+    });
+    eventListEl.innerHTML = html;
+    eventListEl.scrollTop = scrollPos;
+  }
+
+  function selectEvent(id) {
+    selectedEventId = id;
+    fetchEvents();
+  }
+
+function renderDetail(evt) {
+    
+    
+    
+    const isDeclined = evt.logs.some(l => l.msg.includes('DECLINED'));
+    
+    
+    const isLogTimeout = evt.logs.some(l => 
+        l.msg.toUpperCase().includes('TIMEOUT') || 
+        l.msg.toUpperCase().includes('EXPIRED')
+    );
+
+    
+    const hasSuccessLog = evt.logs.some(l => {
+      const msg = l.msg;
+      
+      const isAck = msg.includes('ACK received') && !msg.toUpperCase().includes('TIMEOUT');
+      const isGenericSuccess = msg.includes('Success') && !msg.includes('False') && !msg.includes('Failed');
+      return isAck || isGenericSuccess;
+    });
+
+    const isAcked = (!!evt.ack_ts || hasSuccessLog) && !isLogTimeout && !isDeclined;
+
+    // --- CALC TIMING ---
+    const sentTime = new Date(evt.sent_ts).getTime();
+    const now = Date.now();
+    const elapsedSec = Math.floor((now - sentTime) / 1000);
+    
+    const latencyBuffer = 0; 
+    let timeoutSec = 25; 
+    if (evt.event_type === 'TRANSACTION_OTP') timeoutSec = 20 + latencyBuffer; 
+    if (evt.event_type === 'NEW_DEVICE_LOGIN') timeoutSec = 68 + latencyBuffer; 
+    
+    const remaining = Math.max(0, timeoutSec - elapsedSec);
+    
+    
+    const isTimedOut = isLogTimeout || ((remaining === 0) && !isAcked && !isDeclined);
+
+    let displayLogs = [...evt.logs];
+
+
+    // --- SYNTHETIC LOG INJECTION ---
+    if (evt.event_type !== 'TRANSACTION_OTP') {
+        if (isTimedOut && !isLogTimeout && !isAcked && !isDeclined) {
+            displayLogs.push({
+                msg: "Operation Timed Out (No Response)", 
+                ts: new Date(sentTime + (timeoutSec - latencyBuffer) * 1000).toISOString()
+            });
+        }
+    }
+    else {
+        
+        const hasFallbackLog = evt.logs.some(l => l.msg.includes('Fallback to'));
+
+        if (evt.chosen_channel !== 'SMS' && isTimedOut && !isLogTimeout && !isAcked && !isDeclined && !hasFallbackLog) {
+             const actualFallback = evt.fallback_channel || (evt.chosen_channel === 'IN_APP' ? 'WHATSAPP' : 'SMS');
+             displayLogs.push({
+                msg: `No ACK -> Fallback to ${actualFallback}`,
+                ts: new Date(sentTime + (timeoutSec - latencyBuffer) * 1000).toISOString()
+            });
+        }
+    }
+
+    // --- LAYOUT RENDERING ---
+
+    // 1. TRANSACTION LAYOUT
+    if (evt.event_type === 'TRANSACTION_OTP') {
+        let statusLabel = '';
+        let actionButton = '';
+        let fallbackVal = '<span style="color:#64748b">--</span>'; 
+        let fallbackColor = '#64748b'; 
+
+        if (evt.chosen_channel === 'SMS') {
+            statusLabel = `<div class="status-pill verified">SENT</div>`;
+            fallbackVal = `<span style="color:#64748b; font-weight:normal;">None</span>`;
+        } 
+        else if (isDeclined) {
+            statusLabel = `<div class="status-pill declined">DECLINED</div>`;
+            fallbackVal = `<span style="color:#ef4444; font-weight:normal;">None (User Rejected)</span>`;
+        }
+        else if (isTimedOut) { // Check Timeout BEFORE Success
+            statusLabel = `<div class="status-pill fallback">FALLBACK</div>`;
+            const actualFallback = evt.fallback_channel || (evt.chosen_channel === 'IN_APP' ? 'WHATSAPP' : 'SMS');
+            fallbackVal = actualFallback;
+            if (actualFallback === 'WHATSAPP') fallbackColor = '#0d9488'; 
+            else fallbackColor = '#f97316'; 
+        } 
+        else if (isAcked) { 
+            statusLabel = `<div class="status-pill verified">VERIFIED</div>`;
+            fallbackVal = `<span style="color:#64748b; font-weight:normal;">None (Success)</span>`;
+        } 
+        else {
+            statusLabel = `<div class="status-pill pending">PENDING</div>`;
+            if (evt.chosen_channel === 'IN_APP') {
+                actionButton = `
+                  <div style="margin-top:12px; font-size:11px; color:#94a3b8; font-style:italic;">Waiting for user...</div>
+                  <span class="countdown-text">Auto-fallback in ${remaining}s</span>
+                `;
+            } else {
+                actionButton = `
+                  <button class="simulate-btn" onclick="forceAck('${evt.event_id}')">Simulate ACK</button>
+                  <span class="countdown-text">Auto-fallback in ${remaining}s</span>
+                `;
+            }
+        }
+
+        const logsHtml = displayLogs.slice().reverse().map((log, i) => {
+            const isFallback = log.msg.toUpperCase().includes('FALLBACK') || log.msg.toUpperCase().includes('TIMEOUT');
+            const isDeclineLog = log.msg.includes('DECLINED');
+            let dotClass = i === 0 ? 'latest' : '';
+            if (isFallback) dotClass = 'fallback'; 
+            if (isDeclineLog) dotClass = 'declined';
+            
+            return `
+            <div class="log-entry ${dotClass}">
+              <div class="log-dot"></div>
+              <span class="log-time">${fmtTime(log.ts)}</span>
+              <span class="log-msg">${log.msg}</span>
+            </div>`;
+        }).join('');
+
+        detailViewEl.innerHTML = `
+          <div class="txn-card">
+            <div class="txn-header">
+                <div class="txn-title">
+                    <h1>${evt.event_type}</h1>
+                    <span class="uuid">Event ID: ${evt.event_id}</span>
+                </div>
+                <div class="action-area">
+                    ${statusLabel}
+                    ${actionButton}
+                </div>
+            </div>
+            <div class="info-grid">
+                <div class="info-box">
+                    <span class="info-label">User ID</span>
+                    <span class="info-val">${evt.user_id}</span>
+                </div>
+                <div class="info-box">
+                    <span class="info-label">Primary Channel</span>
+                    <span class="info-val" style="color:#60a5fa">${evt.chosen_channel}</span>
+                </div>
+                <div class="info-box">
+                    <span class="info-label">Fallback</span>
+                    <span class="info-val" style="color:${fallbackColor}">${fallbackVal}</span>
+                </div>
+            </div>
+            <div style="margin-top:40px;">
+                <div style="font-size:11px; color:#64748b; margin-bottom:16px; letter-spacing:1px; font-weight:700;">EXECUTION LOG</div>
+                <div class="timeline">${logsHtml}</div>
+            </div>
+          </div>
+        `;
+    } 
+    // 2. IDENTITY LAYOUT (Login/Binding)
+    else {
+        let statusHtml = '';
+        
+        if (isDeclined) {
+            statusHtml = `<span class="val" style="color:#ef4444">FAILED / DECLINED</span>`;
+        } 
+        else if (isTimedOut) { // Check Timeout BEFORE Success
+            statusHtml = `<span class="val" style="color:#94a3b8">EXPIRED / TIMEOUT</span>`;
+        }
+        else if (isAcked) {
+            statusHtml = `<span class="val" style="color:#22c55e">SUCCESS / VERIFIED</span>`;
+        } 
+        else {
+            statusHtml = `
+              <span class="val" style="color:#f97316">PENDING ACTION</span>
+              <span class="countdown-text" style="text-align:right;">Expires in ${remaining}s</span>
+            `;
+        }
+
+        const logsHtml = displayLogs.slice().reverse().map((log, i) => {
+            let dotClass = i === 0 ? 'latest' : '';
+            if (log.msg.includes('DECLINED')) dotClass = 'declined';
+            if (log.msg.toUpperCase().includes('TIMEOUT') || log.msg.toUpperCase().includes('EXPIRED')) dotClass = 'fallback'; 
+            
+            return `
+            <div class="log-entry ${dotClass}">
+              <div class="log-dot"></div>
+              <span class="log-time">${fmtTime(log.ts)}</span>
+              <span class="log-msg">${log.msg}</span>
+            </div>`;
+        }).join('');
+
+        detailViewEl.innerHTML = `
+          <div class="detail-card">
+            <div class="card-header">
+              <div class="card-title"><h1>${evt.event_type}</h1><span>Event ID: ${evt.event_id}</span></div>
+              <div class="big-status">${statusHtml}</div>
+            </div>
+            <div style="font-size:12px;color:#94a3b8;margin-bottom:12px;">Execution Log</div>
+            <div class="timeline">${logsHtml}</div>
+          </div>
+        `;
+    }
+}
+  fetchEvents();
+  setInterval(fetchEvents, 1000); 
+</script>
+</body>
+</html>
